@@ -103,3 +103,8 @@ function checkCompareButton() {
         compareButton.disabled = false;
     }
 }
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('info-text');
+    info.classList.toggle('hidden');
+});

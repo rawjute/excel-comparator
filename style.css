@@ -15,7 +15,7 @@ h1 {
 .container {
     max-width: 900px;
     margin: auto;
-    padding: 4rem;
+    padding: 3rem 4rem;
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -27,10 +27,37 @@ label {
     font-weight: bold;
 }
 
-input[type="file"] {
-    display: block;
-    margin-bottom: 1rem;
+#info-text {
+    background-color: #f9f9f9;
+    border-left: 4px solid #007acc;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+.info-toggle {
+    margin-top: 1rem;
+    text-align: left;
+}
+
+#toggle-info {
+    background: none;
+    color: #007acc;
+    border: none;
     padding: 0.4rem;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: underline;
+    width: auto;
+}
+
+#toggle-info:hover {
+    color: #005a99;
 }
 
 input[type="checkbox"] {
