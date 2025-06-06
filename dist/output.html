@@ -21,7 +21,7 @@ h1 {
 .container {
     max-width: 900px;
     margin: auto;
-    padding: 4rem;
+    padding: 3rem 4rem;
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -33,10 +33,37 @@ label {
     font-weight: bold;
 }
 
-input[type="file"] {
-    display: block;
-    margin-bottom: 1rem;
+#info-text {
+    background-color: #f9f9f9;
+    border-left: 4px solid #007acc;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+.info-toggle {
+    margin-top: 1rem;
+    text-align: left;
+}
+
+#toggle-info {
+    background: none;
+    color: #007acc;
+    border: none;
     padding: 0.4rem;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: underline;
+    width: auto;
+}
+
+#toggle-info:hover {
+    color: #005a99;
 }
 
 input[type="checkbox"] {
@@ -136,6 +163,21 @@ button:hover {
 <body>
     <div class="container">
         <h1>Confronta File Excel</h1>
+        <div class="info-toggle">
+            <button id="toggle-info">ℹ️ Come funziona</button>
+            <div id="info-text" class="hidden">
+                <p>
+                    Questo sito consente di confrontare uno o più file Excel con un file master.<br>
+                    Le celle etichettate nel master con colore D9D9D9 (grigio chiaro) verranno confrontate nei file test:
+                <ul>
+                    <li><span style="color:green;">Verde</span> → valore e formula identici</li>
+                    <li><span style="color:orange;">Arancione</span> → valore identico ma formula diversa</li>
+                    <li><span style="color:red;">Rosso</span> → valore diverso</li>
+                </ul>
+                È anche possibile esportare i risultati in uno ZIP, se selezionato.
+                </p>
+            </div>
+        </div>
 
         <div id="file-selector-container">
             <div class="file-selector">
@@ -322,7 +364,7 @@ function handleSelectTests(e) {
     const files = e.target.files;
     const filesLength = files.length;
 
-    setLabelText(e, filesLength, masterLabel);
+    setLabelText(e, filesLength, testsLabel);
     fileSelector.testFiles = files;
     checkCompareButton();
 }
@@ -348,6 +390,11 @@ function checkCompareButton() {
     if (fileSelector.masterFile && fileSelector.testFiles && fileSelector.testFiles.length > 0) {
         compareButton.disabled = false;
     }
-}</script>
+}
+
+document.getElementById('toggle-info').addEventListener('click', () => {
+    const info = document.getElementById('info-text');
+    info.classList.toggle('hidden');
+});</script>
 </body>
 </html>
