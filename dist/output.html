@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Confronto Excel</title>
+
+    <style>body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f8;
+    margin: 0;
+    padding: 2rem;
+    color: #333;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #2c3e50;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 4rem;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    display: block;
+    margin: 1rem 0 0.5rem;
+    font-weight: bold;
+}
+
+input[type="file"] {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 0.4rem;
+}
+
+input[type="checkbox"] {
+    margin-right: 0.5rem;
+    transform: scale(1.2);
+}
+
+button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #3498db;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    border: 1px solid #aaa;
+    box-shadow: none;
+    opacity: 0.7;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+.checkbox-group {
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-group label {
+    font-weight: normal;
+    margin: 0;
+}
+
+#file-selector-container {
+    display: flex;
+    gap: 4rem;
+}
+
+.file-selector {
+    display: block;
+    align-items: center;
+    text-align: center;
+    margin: 1rem auto;
+    width: 100%;
+}
+
+#master-input, #tests-input {
+    display: none;
+}
+
+.drop-area {
+    border: 2px dashed #ccc;
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.drop-area.highlight {
+    background-color: #f0f8ff;
+}
+
+.drop-area p {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.drop-area .button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #3498db;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+}
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Confronta File Excel</h1>
+
+        <div id="file-selector-container">
+            <div class="file-selector">
+                <h3>Master File</h3>
+                <div class="drop-area" id="drop-area-master">
+                    <p id="master-text">0 file selezionati</p>
+                    <input type="file" id="master-input" accept=".xlsx" />
+                    <label class="button" for="master-input">Seleziona file</label>
+                </div>
+            </div>
+
+            <div class="file-selector">
+                <h3>Test Files</h3>
+                <div class="drop-area" id="drop-area-tests">
+                    <p id="tests-text">0 file selezionati</p>
+                    <input type="file" id="tests-input" accept=".xlsx" multiple />
+                    <label class="button" for="tests-input">Seleziona file</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="zipOutput" />
+            <label>ZIP output</label>
+        </div>
+        <button id="compare-button" disabled onclick="compare()">Confronta</button>
+    </div>
+
+    <script>const green = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC6EFCE' } };
+const red = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC7CE' } };
+const orange = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFEB9C' } };
+const labelRgb = "FFD9D9D9";
+
+function isLabeled(cell) {
+    const fill = cell.fill;
+    return fill &&
+         fill.type === 'pattern' &&
+         fill.pattern === 'solid' &&
+         fill.fgColor &&
+         fill.fgColor.argb === labelRgb;
+}
+
+async function compare() {
+    const masterFile = fileSelector.masterFile;
+    const testFiles = fileSelector.testFiles;
+    const zipOutput = document.getElementById('zipOutput').checked;
+
+    if (!masterFile || testFiles.length === 0) {
+        alert("Seleziona il file master e almeno un file di test!");
+        return;
+    }
+
+    const wbMaster = new ExcelJS.Workbook();
+    const wbTest = new ExcelJS.Workbook();
+
+    const zip = new JSZip();
+
+    for (const testFile of testFiles) {
+        await wbMaster.xlsx.load(await masterFile.arrayBuffer());
+        await wbTest.xlsx.load(await testFile.arrayBuffer());
+
+        const wsMaster = wbMaster.worksheets[0];
+        const wsTest = wbTest.worksheets[0];
+
+        const wbOut = new ExcelJS.Workbook();
+        const wsOut = wbOut.addWorksheet("Confronto");
+
+        wsMaster.eachRow((row, rowIndex) => {
+            const outRow = wsOut.getRow(rowIndex);
+            const testRow = wsTest.getRow(rowIndex);
+            row.eachCell((cell, colIndex) => {
+                const cMaster = cell;
+                const cTest = testRow.getCell(colIndex);
+                const cOut = outRow.getCell(colIndex);
+                cOut.value = cTest.value;
+
+                if (!isLabeled(cMaster)) return;
+
+                const v1 = cMaster.value.result;
+                const v2 = cTest.value.result;
+                const f1 = cMaster.formula;
+                const f2 = cTest.formula;
+
+                if (v1 === v2) {
+                    cOut.fill = (f1 === f2) ? green : orange;
+                } else {
+                    cOut.fill = red;
+                }
+            });
+            outRow.commit();
+        });
+
+        const buffer = await wbOut.xlsx.writeBuffer();
+        const outputName = `out_${testFile.name}`;
+        if (zipOutput) {
+            zip.file(outputName, buffer);
+        } else {
+            saveAs(new Blob([buffer]), outputName);
+        }
+    }
+
+    if (zipOutput) {
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, "results.zip");
+    }
+
+}
+</script>
+    <script>const dropAreaMaster = document.getElementById('drop-area-master');
+const fileInputMaster = document.getElementById('master-input');
+const dropAreaTests = document.getElementById('drop-area-tests');
+const fileInputTests = document.getElementById('tests-input');
+const masterLabel = document.getElementById('master-text');
+const testsLabel = document.getElementById('tests-text');
+const compareButton = document.getElementById('compare-button');
+
+class FileSelector {
+    masterFile = null;
+    testFiles = null;
+}
+
+const fileSelector = new FileSelector();
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropAreaMaster.addEventListener(eventName, (e) => highlight(e, dropAreaMaster), false);
+    dropAreaTests.addEventListener(eventName, (e) => highlight(e, dropAreaTests), false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropAreaMaster.addEventListener(eventName, (e) => unhighlight(e, dropAreaMaster), false);
+    dropAreaTests.addEventListener(eventName, (e) => unhighlight(e, dropAreaTests), false);
+});
+
+dropAreaMaster.addEventListener('drop', handleDropMaster, false);
+dropAreaTests.addEventListener('drop', handleDropTests, false);
+fileInputMaster.addEventListener('change', handleSelectMaster, false);
+fileInputTests.addEventListener('change', handleSelectTests, false);
+
+function highlight(e, area) {
+    e.preventDefault();
+    e.stopPropagation();
+    area.classList.add('highlight');
+}
+
+function unhighlight(e, area) {
+    e.preventDefault();
+    e.stopPropagation();
+    area.classList.remove('highlight');
+}
+
+function handleSelectMaster(e) {
+    const files = e.target.files;
+    const filesLength = files.length;
+
+    if (filesLength > 1) {
+        alert("Puoi inserire un solo file master!");
+        return;
+    }
+
+    setLabelText(e, filesLength, masterLabel);
+    fileSelector.masterFile = files[0];
+    checkCompareButton();
+}
+
+function handleDropMaster(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    const filesLength = files.length;
+
+    if (filesLength > 1) {
+        alert("Puoi inserire un solo file master!");
+        return;
+    }
+
+    setLabelText(e, filesLength, masterLabel);
+    fileSelector.masterFile = files[0];
+    checkCompareButton();
+}
+
+function handleSelectTests(e) {
+    const files = e.target.files;
+    const filesLength = files.length;
+
+    setLabelText(e, filesLength, masterLabel);
+    fileSelector.testFiles = files;
+    checkCompareButton();
+}
+
+function handleDropTests(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    const filesLength = files.length;
+
+    setLabelText(e, filesLength, testsLabel);
+    fileSelector.testFiles = files;
+    checkCompareButton();
+}
+
+function setLabelText(e, filesLength, label) {
+    label.textContent = filesLength + " file selezionat" + (filesLength===1 ? "o" : "i");
+}
+
+function checkCompareButton() {
+    if (fileSelector.masterFile && fileSelector.testFiles && fileSelector.testFiles.length > 0) {
+        compareButton.disabled = false;
+    }
+}</script>
+</body>
+</html>
