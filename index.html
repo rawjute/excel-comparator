@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Confronto Excel</title>
+
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Confronta File Excel</h1>
+
+        <div id="file-selector-container">
+            <div class="file-selector">
+                <h3>Master File</h3>
+                <div class="drop-area" id="drop-area-master">
+                    <p id="master-text">0 file selezionati</p>
+                    <input type="file" id="master-input" accept=".xlsx" />
+                    <label class="button" for="master-input">Seleziona file</label>
+                </div>
+            </div>
+
+            <div class="file-selector">
+                <h3>Test Files</h3>
+                <div class="drop-area" id="drop-area-tests">
+                    <p id="tests-text">0 file selezionati</p>
+                    <input type="file" id="tests-input" accept=".xlsx" multiple />
+                    <label class="button" for="tests-input">Seleziona file</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="zipOutput" />
+            <label>ZIP output</label>
+        </div>
+        <button id="compare-button" disabled onclick="compare()">Confronta</button>
+    </div>
+
+    <script src="compator.js"></script>
+    <script src="drag-drop-files.js"></script>
+</body>
+</html>
