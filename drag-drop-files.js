@@ -76,7 +76,7 @@ function handleSelectTests(e) {
     const files = e.target.files;
     const filesLength = files.length;
 
-    setLabelText(e, filesLength, masterLabel);
+    setLabelText(e, filesLength, testsLabel);
     fileSelector.testFiles = files;
     checkCompareButton();
 }
